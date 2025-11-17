@@ -32,7 +32,6 @@ The architecture is designed to be:
 - 🧩 **Type safety** across supported types:
   - `float`, `int`, `byte`, `bool`, `enum`, `string`
 - 🔍 **Self-descriptive parameters** — each knows its name, type, and metadata at runtime
-- 🧱 **Constexpr and inline usage** wherever possible
 - 🚫 **No redundant definitions** (no duplicated names or IDs)
 - 🧮 **Simple, unified access syntax**
   - `params.name1`
@@ -164,3 +163,152 @@ constexpr Parameter<const char*> mqttServer {
 };
 
 } // namespace params
+```
+
+# 📘 Parameter Usage Examples
+
+## 🧩 Example — Parameter Access
+
+```cpp
+if (params::engineTemp.isValid()) {
+    float temp = params::engineTemp;
+    Serial.println(temp);
+}
+
+params::systemActive = true;
+
+const char* server = params::mqttServer.getValue();
+Serial.println(server);
+```
+
+🧠 Dynamic / Runtime Parameters (Optional)
+
+To enable flexible configuration, parameters can also be created at runtime,
+for example loaded from a JSON configuration file or network message.
+
+🧩 Example — Runtime JSON Definition
+#include "params.h"
+#include "ArduinoJson.h"
+
+Parameters paramsManager;
+
+void setupRuntimeParams(const char* jsonConfig) {
+    StaticJsonDocument<512> doc;
+    deserializeJson(doc, jsonConfig);
+
+    for (JsonObject p : doc["parameters"].as<JsonArray>()) {
+        uint16_t id = p["id"];
+        const char* name = p["name"];
+        const char* category = p["category"];
+        const char* unit = p["unit"];
+        const char* type = p["type"];
+        const char* value = p["value"];
+
+        if (strcmp(type, "float") == 0) {
+            auto* param = new Parameter<float>(
+                id, atof(value), 0, 0, name, unit, category, 0
+            );
+            paramsManager.registerParameter(param);
+        } else if (strcmp(type, "string") == 0) {
+            auto* param = new Parameter<String>(
+                id, String(value), "", "", name, unit, category, 0
+            );
+            paramsManager.registerParameter(param);
+        }
+        // Add more type cases as needed
+    }
+}
+
+Example JSON input
+{
+  "parameters": [
+    { "id": 10, "name": "wifiSSID", "type": "string", "value": "MyNetwork", "category": "Network", "unit": "" },
+    { "id": 11, "name": "updateRate", "type": "float", "value": "0.5", "category": "System", "unit": "s" }
+  ]
+}
+
+🧩 Access by ID or Name
+auto* param = paramsManager.getByID(5);
+if (param && param->isValid()) {
+    Serial.println(param->getName());
+}
+
+auto* mqttParam = paramsManager.getByName("MQTTServer");
+if (mqttParam) mqttParam->setValue("mqtt.remote.net");
+
+🧠 Compile-Time vs Runtime Overview
+Aspect	Compile-Time	Runtime
+Definition	constexpr / static in headers	JSON, network, or user input
+Storage	Flash memory (program)	Dynamic allocation
+Access	params::name	paramsManager.getByName() / getByID()
+Performance	Very fast	Slightly slower
+Typical Use	System constants, calibration	User config, network parameters
+🧰 Key Principles
+
+Compile-time optimization
+
+Clean, minimal parameter definitions
+
+Dynamic extensibility via ParameterManager
+
+Unified API for static + runtime parameters
+
+No redundant definitions
+
+Cross-platform (Arduino / STM32)
+
+Minimal footprint
+
+Flash-based metadata for static parameters
+
+🔮 Future Integration Points
+
+Planned future interfaces for extended functionality:
+
+PersistenceInterface → EEPROM / Flash storage
+
+SerializationInterface → JSON / binary encoding
+
+PDUInterface → CAN / UART / MQTT communication
+
+(Interfaces not yet implemented in this version.)
+
+
+9. Namespace and Multiple Header Support
+
+You can define parameters across multiple headers:
+
+// params_engine.h
+namespace params { PARAM(float, engineTemp, ...); }
+
+// params_network.h
+namespace params { PARAM(string, mqttServer, ...); }
+
+
+Everything still works because:
+
+Each parameter self-registers
+
+Namespace keeps API clean
+
+No linker conflicts if static is used
+
+8. Unique ID Checking
+
+C++ cannot automatically detect all parameters in a namespace.
+
+Options:
+
+✔ Central enum
+enum class ParamID : uint16_t { EngineTemp = 1, RPM = 2 };
+
+
+Compile-time prevention of duplicate names.
+
+✔ ID list + static_assert(checkUnique())
+constexpr uint16_t PARAM_IDS[] = {1, 2, 3};
+static_assert(checkUnique(PARAM_IDS));
+
+✔ Macros auto-generate ID list
+
+More automation but less transparency.
