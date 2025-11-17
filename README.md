@@ -9,6 +9,7 @@ The architecture is designed to be:
 - 🧱 **Modular and scalable**
 - 🌍 **Portable across embedded targets**
 - 🔒 **Deterministic at runtime** by keeping all firmware parameters static
+- As much as possible copatible with openinverter stm32 parameter implementation
 
 ---
 
@@ -19,7 +20,6 @@ The architecture is designed to be:
 | File | Description |
 |------|--------------|
 | `params.h` | Defines the core `Parameter` template class, the `Parameters` manager class, and associated interfaces. |
-| `params_proj.h` | Defines all project-specific parameters using a single-line, constexpr-based syntax. |
 
 ---
 
@@ -223,7 +223,7 @@ Planned future interfaces for extended functionality:
 - PDUInterface → CAN / UART / MQTT communication
 - (Interfaces not yet implemented in this version.)
 
-## 9. Namespace and Multiple Header Support
+## Namespace and Multiple Header Support
 
 You can define parameters across multiple headers:
 
@@ -241,7 +241,7 @@ Everything still works because:
 - Namespace keeps API clean
 - No linker conflicts if static is used
 
-## 8. Unique ID Checking
+## Unique ID Checking
 
 C++ cannot automatically detect all parameters in a namespace.
 
