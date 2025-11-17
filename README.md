@@ -1,8 +1,7 @@
 # 📘 Parameter System Architecture for Embedded Devices (Arduino / STM32 Compatible)
 
 ## 🧩 Overview
-This project defines a **lightweight and extensible parameter management system** for embedded devices such as Arduino and STM32.  
-It provides a unified interface for **compile-time and runtime parameter handling**, allowing efficient data management, serialization, and communication between modules.
+This project defines a **lightweight and extensible parameter management system** for embedded devices such as Arduino and STM32. It provides a unified interface for **compile-time and runtime parameter handling**, allowing efficient data management, serialization, and communication between modules.
 
 The architecture is designed to be:
 - 💡 **Type-safe**
@@ -98,8 +97,7 @@ Represents a single configuration or runtime variable.
 
 ### Class: `Parameters`
 
-Acts as the **central registry** for all parameters — both compile-time and runtime-defined.  
-Provides lookup, iteration, serialization, and persistence access points.
+Acts as the **central registry** for all parameters — both compile-time and runtime-defined. Provides lookup, iteration, serialization, and persistence access points.
 
 #### **Responsibilities**
 - Hold references/pointers to all parameters
@@ -125,8 +123,7 @@ Provides lookup, iteration, serialization, and persistence access points.
 
 ### Example — **Compile-Time Definition**
 
-All compile-time parameters are defined in `params_proj.h`.  
-Each line defines one parameter with all metadata as constexpr expressions.
+All compile-time parameters are defined in `params_proj.h`. Each line defines one parameter with all metadata as constexpr expressions.
 
 ```cpp
 // params_proj.h
@@ -181,12 +178,13 @@ const char* server = params::mqttServer.getValue();
 Serial.println(server);
 ```
 
-🧠 Dynamic / Runtime Parameters (Optional)
+## 🧠 Dynamic / Runtime Parameters (Optional)
 
-To enable flexible configuration, parameters can also be created at runtime,
-for example loaded from a JSON configuration file or network message.
+To enable flexible configuration, parameters can also be created at runtime, for example loaded from a JSON configuration file or network message.
 
-🧩 Example — Runtime JSON Definition
+### 🧩 Example — Runtime JSON Definition
+
+```cpp
 #include "params.h"
 #include "ArduinoJson.h"
 
@@ -218,16 +216,22 @@ void setupRuntimeParams(const char* jsonConfig) {
         // Add more type cases as needed
     }
 }
+```
 
-Example JSON input
+### Example JSON input
+
+```json
 {
   "parameters": [
     { "id": 10, "name": "wifiSSID", "type": "string", "value": "MyNetwork", "category": "Network", "unit": "" },
     { "id": 11, "name": "updateRate", "type": "float", "value": "0.5", "category": "System", "unit": "s" }
   ]
 }
+```
 
-🧩 Access by ID or Name
+### 🧩 Access by ID or Name
+
+```cpp
 auto* param = paramsManager.getByID(5);
 if (param && param->isValid()) {
     Serial.println(param->getName());
@@ -235,79 +239,76 @@ if (param && param->isValid()) {
 
 auto* mqttParam = paramsManager.getByName("MQTTServer");
 if (mqttParam) mqttParam->setValue("mqtt.remote.net");
+```
 
-🧠 Compile-Time vs Runtime Overview
-Aspect	Compile-Time	Runtime
-Definition	constexpr / static in headers	JSON, network, or user input
-Storage	Flash memory (program)	Dynamic allocation
-Access	params::name	paramsManager.getByName() / getByID()
-Performance	Very fast	Slightly slower
-Typical Use	System constants, calibration	User config, network parameters
-🧰 Key Principles
+## 🧠 Compile-Time vs Runtime Overview
 
-Compile-time optimization
+| Aspect | Compile-Time | Runtime |
+|--------|---------------|---------|
+| Definition | constexpr / static in headers | JSON, network, or user input |
+| Storage | Flash memory (program) | Dynamic allocation |
+| Access | `params::name` | `paramsManager.getByName()` / `getByID()` |
+| Performance | Very fast | Slightly slower |
+| Typical Use | System constants, calibration | User config, network parameters |
 
-Clean, minimal parameter definitions
+## 🧰 Key Principles
 
-Dynamic extensibility via ParameterManager
+- Compile-time optimization
+- Clean, minimal parameter definitions
+- Dynamic extensibility via ParameterManager
+- Unified API for static + runtime parameters
+- No redundant definitions
+- Cross-platform (Arduino / STM32)
+- Minimal footprint
+- Flash-based metadata for static parameters
 
-Unified API for static + runtime parameters
-
-No redundant definitions
-
-Cross-platform (Arduino / STM32)
-
-Minimal footprint
-
-Flash-based metadata for static parameters
-
-🔮 Future Integration Points
+## 🔮 Future Integration Points
 
 Planned future interfaces for extended functionality:
 
-PersistenceInterface → EEPROM / Flash storage
+- PersistenceInterface → EEPROM / Flash storage
+- SerializationInterface → JSON / binary encoding
+- PDUInterface → CAN / UART / MQTT communication
+- (Interfaces not yet implemented in this version.)
 
-SerializationInterface → JSON / binary encoding
-
-PDUInterface → CAN / UART / MQTT communication
-
-(Interfaces not yet implemented in this version.)
-
-
-9. Namespace and Multiple Header Support
+## 9. Namespace and Multiple Header Support
 
 You can define parameters across multiple headers:
 
+```cpp
 // params_engine.h
 namespace params { PARAM(float, engineTemp, ...); }
 
 // params_network.h
 namespace params { PARAM(string, mqttServer, ...); }
-
+```
 
 Everything still works because:
 
-Each parameter self-registers
+- Each parameter self-registers
+- Namespace keeps API clean
+- No linker conflicts if static is used
 
-Namespace keeps API clean
-
-No linker conflicts if static is used
-
-8. Unique ID Checking
+## 8. Unique ID Checking
 
 C++ cannot automatically detect all parameters in a namespace.
 
 Options:
 
 ✔ Central enum
-enum class ParamID : uint16_t { EngineTemp = 1, RPM = 2 };
 
+```cpp
+enum class ParamID : uint16_t { EngineTemp = 1, RPM = 2 };
+```
 
 Compile-time prevention of duplicate names.
 
 ✔ ID list + static_assert(checkUnique())
+
+```cpp
 constexpr uint16_t PARAM_IDS[] = {1, 2, 3};
 static_assert(checkUnique(PARAM_IDS));
+```
 
 ✔ Macros auto-generate ID list
 
