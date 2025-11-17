@@ -1,13 +1,14 @@
 # 📘 Parameter System Architecture for Embedded Devices (Arduino / STM32 Compatible)
 
 ## 🧩 Overview
-This project defines a **lightweight and extensible parameter management system** for embedded devices such as Arduino and STM32. It provides a unified interface for **compile-time and runtime parameter handling**, allowing efficient data management, serialization, and communication between modules.
+This project defines a **lightweight and extensible parameter management system** for embedded devices such as Arduino and STM32. It provides a unified interface for **compile-time parameter handling**, allowing efficient data management, serialization, and communication between modules.
 
 The architecture is designed to be:
 - 💡 **Type-safe**
 - ⚡ **Optimized for low RAM/CPU**
 - 🧱 **Modular and scalable**
 - 🌍 **Portable across embedded targets**
+- 🔒 **Deterministic at runtime** by keeping all firmware parameters static
 
 ---
 
@@ -26,8 +27,8 @@ The architecture is designed to be:
 
 - ✅ **Arduino C++ & STM32 compatible**
 - ⚡ **Minimal footprint** (RAM/CPU)
-- 🧠 **Compile-time definition** of most parameters (values, names, limits)
-- 🔁 **Optional runtime parameter creation** (e.g., from JSON configuration)
+- 🧠 **Compile-time definition** of all embedded parameters (values, names, limits)
+- 🔒 **Deterministic, static embedded firmware** — no runtime parameter mutation inside the microcontroller
 - 🧩 **Type safety** across supported types:
   - `float`, `int`, `byte`, `bool`, `enum`, `string`
 - 🔍 **Self-descriptive parameters** — each knows its name, type, and metadata at runtime
@@ -37,6 +38,7 @@ The architecture is designed to be:
   - or `params::name1`
 - 💾 **Interfaces prepared** for persistence and serialization
 - 🧩 **ID-based lookup** for all parameters through an overarching `Parameters` manager
+- 🔁 **Future dynamic support** lives in a **separate ParameterManager** for tools/datalogging (not embedded firmware)
 
 ---
 
@@ -97,7 +99,7 @@ Represents a single configuration or runtime variable.
 
 ### Class: `Parameters`
 
-Acts as the **central registry** for all parameters — both compile-time and runtime-defined. Provides lookup, iteration, serialization, and persistence access points.
+Acts as the **central registry** for all parameters — defined at compile time for embedded firmware. Provides lookup, iteration, serialization, and persistence access points.
 
 #### **Responsibilities**
 - Hold references/pointers to all parameters
@@ -105,6 +107,7 @@ Acts as the **central registry** for all parameters — both compile-time and ru
 - Provide **serialization** interface (to/from JSON, binary, etc.)
 - Manage optional **persistent storage**
 - Track **update timestamps and validity**
+- Self-register parameters as they are constructed, eliminating the need for a central master list
 
 #### **Core Functions**
 | Function | Description |
@@ -178,85 +181,34 @@ const char* server = params::mqttServer.getValue();
 Serial.println(server);
 ```
 
-## 🧠 Dynamic / Runtime Parameters (Optional)
+## 🧠 Dynamic / Runtime Parameters (External Tools)
 
-To enable flexible configuration, parameters can also be created at runtime, for example loaded from a JSON configuration file or network message.
+Dynamic parameters are **intentionally excluded** from the embedded firmware to preserve determinism and avoid heap usage. Future tooling (e.g., dataloggers or desktop utilities) can implement a **separate but interface-compatible `ParameterManager`** that accepts JSON, network messages, or other inputs.
 
-### 🧩 Example — Runtime JSON Definition
-
-```cpp
-#include "params.h"
-#include "ArduinoJson.h"
-
-Parameters paramsManager;
-
-void setupRuntimeParams(const char* jsonConfig) {
-    StaticJsonDocument<512> doc;
-    deserializeJson(doc, jsonConfig);
-
-    for (JsonObject p : doc["parameters"].as<JsonArray>()) {
-        uint16_t id = p["id"];
-        const char* name = p["name"];
-        const char* category = p["category"];
-        const char* unit = p["unit"];
-        const char* type = p["type"];
-        const char* value = p["value"];
-
-        if (strcmp(type, "float") == 0) {
-            auto* param = new Parameter<float>(
-                id, atof(value), 0, 0, name, unit, category, 0
-            );
-            paramsManager.registerParameter(param);
-        } else if (strcmp(type, "string") == 0) {
-            auto* param = new Parameter<String>(
-                id, String(value), "", "", name, unit, category, 0
-            );
-            paramsManager.registerParameter(param);
-        }
-        // Add more type cases as needed
-    }
-}
-```
-
-### Example JSON input
-
-```json
-{
-  "parameters": [
-    { "id": 10, "name": "wifiSSID", "type": "string", "value": "MyNetwork", "category": "Network", "unit": "" },
-    { "id": 11, "name": "updateRate", "type": "float", "value": "0.5", "category": "System", "unit": "s" }
-  ]
-}
-```
-
-### 🧩 Access by ID or Name
+Potential future JSON-driven usage would live **outside the microcontroller** and follow the same API shape as the static manager:
 
 ```cpp
-auto* param = paramsManager.getByID(5);
-if (param && param->isValid()) {
-    Serial.println(param->getName());
-}
-
-auto* mqttParam = paramsManager.getByName("MQTTServer");
-if (mqttParam) mqttParam->setValue("mqtt.remote.net");
+// Example sketch for a tooling-side ParameterManager, not for embedded firmware
+Parameters toolingParams;
+// toolingParams.registerParameter(...) would accept dynamically created parameters
 ```
 
 ## 🧠 Compile-Time vs Runtime Overview
 
-| Aspect | Compile-Time | Runtime |
-|--------|---------------|---------|
-| Definition | constexpr / static in headers | JSON, network, or user input |
-| Storage | Flash memory (program) | Dynamic allocation |
+| Aspect | Compile-Time (Embedded Firmware) | Runtime (Future Tooling) |
+|--------|----------------------------------|--------------------------|
+| Definition | `constexpr` / static in headers | JSON, network, or user input |
+| Storage | Flash metadata + minimal RAM | Dynamic allocation in host/tooling |
 | Access | `params::name` | `paramsManager.getByName()` / `getByID()` |
-| Performance | Very fast | Slightly slower |
-| Typical Use | System constants, calibration | User config, network parameters |
+| Performance | Very fast and deterministic | Dependent on host environment |
+| Typical Use | System constants, calibration | Datalogging or configuration tools |
 
 ## 🧰 Key Principles
 
 - Compile-time optimization
 - Clean, minimal parameter definitions
-- Dynamic extensibility via ParameterManager
-- Unified API for static + runtime parameters
+- Self-registration to avoid central lists
+- Unified API surface that can be reused by dynamic tooling managers
 - No redundant definitions
 - Cross-platform (Arduino / STM32)
 - Minimal footprint
