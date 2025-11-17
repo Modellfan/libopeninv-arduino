@@ -23,8 +23,6 @@ The embedded firmware must remain safe, predictable, and optimized. Therefore, c
 
 ## **Options Considered**
 
----
-
 ### **1. Static Parameters Only**
 
 Static parameters are defined at compile time with metadata stored in Flash.
@@ -142,7 +140,7 @@ static const IParameter* ALL_PARAMS[] = {
 
 ---
 
-### **Option 2: Self-Registration (Chosen)**
+### **2. Self-Registration (Chosen)**
 
 Each parameter registers itself inside its constructor:
 
