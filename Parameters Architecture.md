@@ -145,7 +145,7 @@ static const IParameter* ALL_PARAMS[] = {
 Each parameter registers itself inside its constructor:
 
 ```cpp
-Parameters::instance().registerParam(this);
+ParameterManager::instance().registerParam(this);
 ```
 
 The `ParameterManager` maintains a runtime array/list of parameter pointers in RAM.

@@ -21,7 +21,7 @@ The architecture is designed to be:
 
 | File | Description |
 |------|--------------|
-| `params.h` | Defines the core `Parameter` template class, the `Parameters` manager class, and associated interfaces. |
+| `params.h` | Defines the core `Parameter` template class, the `ParameterManager` class, and associated interfaces. |
 
 ---
 
@@ -39,7 +39,7 @@ The architecture is designed to be:
   - `params.name1`
   - or `params::name1`
 - 💾 **Interfaces prepared** for persistence and serialization
-- 🧩 **ID-based lookup** for all parameters through an overarching `Parameters` manager
+- 🧩 **ID-based lookup** for all parameters through an overarching `ParameterManager`
 - 🔁 **Future dynamic support** lives in a **separate ParameterManager** for tools/datalogging (not embedded firmware)
 
 ---
@@ -97,16 +97,16 @@ Represents a single configuration or runtime variable.
 
 ---
 
-## 🧩 Parameters Manager Class
+## 🧩 Parameter Manager Class
 
-### Class: `Parameters`
+### Class: `ParameterManager`
 
-Acts as the **central registry** for all parameters — defined at compile time for embedded firmware. Provides lookup, iteration, serialization, and persistence access points.
+Acts as the **central registry** for all parameters — defined at compile time for embedded firmware. Provides lookup, iteration, and persistence access points plus extension hooks for serialization.
 
 #### **Responsibilities**
 - Hold references/pointers to all parameters
 - Enable **ID-based and name-based access**
-- Provide **serialization** interface (to/from JSON, binary, etc.)
+- Provide a hook for **serialization** interface (to/from JSON, binary, etc.) implemented by extensions
 - Manage optional **persistent storage**
 - Track **update timestamps and validity**
 - Self-register parameters as they are constructed, eliminating the need for a central master list
@@ -117,8 +117,7 @@ Acts as the **central registry** for all parameters — defined at compile time 
 | `registerParameter(ParameterBase* p)` | Add new parameter to internal list (runtime use) |
 | `getByID(uint16_t id)` | Retrieve parameter by unique ID |
 | `getByName(const char* name)` | Retrieve parameter by name |
-| `serializeAll()` | Serialize all parameters (to JSON, etc.) |
-| `deserializeAll(const char* json)` | Load parameter values from serialized data |
+| `deserializeAll(const Reader&)` | Apply a functor/reader to each registered parameter |
 | `forEach(callback)` | Iterate over all registered parameters |
 | `saveAll()` / `loadAll()` | Forward to persistence layer (optional) |
 
@@ -196,7 +195,7 @@ Potential future JSON-driven usage would live **outside the microcontroller** an
 
 ```cpp
 // Example sketch for a tooling-side ParameterManager, not for embedded firmware
-Parameters toolingParams;
+ParameterManager toolingParams;
 // toolingParams.registerParameter(...) would accept dynamically created parameters
 ```
 
