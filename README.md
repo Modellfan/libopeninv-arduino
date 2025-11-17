@@ -3,6 +3,8 @@
 ## 🧩 Overview
 This project defines a **lightweight and extensible parameter management system** for embedded devices such as Arduino and STM32. It provides a unified interface for **compile-time parameter handling**, allowing efficient data management, serialization, and communication between modules.
 
+For the deeper rationale behind the architecture choices, see the [design decision document](Parameters Architecture.md).
+
 The architecture is designed to be:
 - 💡 **Type-safe**
 - ⚡ **Optimized for low RAM/CPU**
@@ -126,7 +128,7 @@ Acts as the **central registry** for all parameters — defined at compile time 
 
 ### Example — **Compile-Time Definition**
 
-All compile-time parameters are defined in `params_proj.h`. Each line defines one parameter with all metadata as constexpr expressions.
+All compile-time parameters are defined in `params_proj.h`. Each parameter uses a **static instance** for the value and **`static const` metadata** (e.g., `ParamDesc`) so metadata stays in Flash and RAM usage stays minimal.
 
 ```cpp
 // params_proj.h
@@ -136,31 +138,36 @@ All compile-time parameters are defined in `params_proj.h`. Each line defines on
 namespace params {
 
 // Float parameter
-constexpr Parameter<float> engineTemp {
-    1, 0.0f, -40.0f, 125.0f, "EngineTemp", "°C", "Engine", 1000
+static const ParamDesc<float> engineTempDesc {
+    1, "EngineTemp", "°C", "Engine", -40.0f, 125.0f, 0.0f, 1000
 };
+static Parameter<float> engineTemp { engineTempDesc };
 
 // Integer parameter
-constexpr Parameter<int> rpm {
-    2, 0, 0, 10000, "RPM", "rpm", "Engine", 1000
+static const ParamDesc<int> rpmDesc {
+    2, "RPM", "rpm", "Engine", 0, 10000, 0, 1000
 };
+static Parameter<int> rpm { rpmDesc };
 
 // Boolean parameter
-constexpr Parameter<bool> systemActive {
-    3, false, false, true, "SystemActive", "", "System", 0
+static const ParamDesc<bool> systemActiveDesc {
+    3, "SystemActive", "", "System", false, true, false, 0
 };
+static Parameter<bool> systemActive { systemActiveDesc };
 
 // Enum parameter
 enum class Mode { OFF, IDLE, RUN, ERROR };
-constexpr const char* ModeNames[] = {"OFF", "IDLE", "RUN", "ERROR"};
-constexpr Parameter<Mode> systemMode {
-    4, Mode::OFF, Mode::OFF, Mode::ERROR, "Mode", "", "System", 0, ModeNames
+static const char* ModeNames[] = {"OFF", "IDLE", "RUN", "ERROR"};
+static const ParamDesc<Mode> systemModeDesc {
+    4, "Mode", "", "System", Mode::OFF, Mode::ERROR, Mode::OFF, 0, ModeNames
 };
+static Parameter<Mode> systemMode { systemModeDesc };
 
 // String parameter (e.g. MQTT server)
-constexpr Parameter<const char*> mqttServer {
-    5, "mqtt.local", "", "", "MQTTServer", "", "Network", 0
+static const ParamDesc<const char*> mqttServerDesc {
+    5, "MQTTServer", "", "Network", "", "", "mqtt.local", 0
 };
+static Parameter<const char*> mqttServer { mqttServerDesc };
 
 } // namespace params
 ```
@@ -197,7 +204,7 @@ Parameters toolingParams;
 
 | Aspect | Compile-Time (Embedded Firmware) | Runtime (Future Tooling) |
 |--------|----------------------------------|--------------------------|
-| Definition | `constexpr` / static in headers | JSON, network, or user input |
+| Definition | Static instances in headers with `static const` metadata | JSON, network, or user input |
 | Storage | Flash metadata + minimal RAM | Dynamic allocation in host/tooling |
 | Access | `params::name` | `paramsManager.getByName()` / `getByID()` |
 | Performance | Very fast and deterministic | Dependent on host environment |
@@ -258,7 +265,7 @@ Compile-time prevention of duplicate names.
 ✔ ID list + static_assert(checkUnique())
 
 ```cpp
-constexpr uint16_t PARAM_IDS[] = {1, 2, 3};
+static const uint16_t PARAM_IDS[] = {1, 2, 3};
 static_assert(checkUnique(PARAM_IDS));
 ```
 
