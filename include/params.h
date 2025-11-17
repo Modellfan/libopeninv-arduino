@@ -122,14 +122,6 @@ public:
     ParameterBase* getByID(uint16_t id) const;
     ParameterBase* getByName(const char* name) const;
 
-    // Generic deserialization: the provided functor must accept (ParameterBase&).
-    template <typename Reader>
-    void deserializeAll(Reader&& reader) {
-        for (size_t i = 0; i < count_; ++i) {
-            reader(*registry_[i]);
-        }
-    }
-
     void checkTimeouts(uint32_t nowMs);
 
     template <typename Callback>
