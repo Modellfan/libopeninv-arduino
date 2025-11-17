@@ -1,8 +1,6 @@
 #include <Arduino.h>
 #include "params.h"
 
-using namespace openinv;
-
 // Enum parameter example
 enum class Mode { OFF, IDLE, RUN, ERROR };
 static const char* ModeNames[] = {"OFF", "IDLE", "RUN", "ERROR"};
@@ -22,13 +20,13 @@ void setup() {
     params::systemMode = Mode::RUN;
 
     Serial.println(F("Registered parameters:"));
-    ParameterManager::instance().forEach([](ParameterBase& param) {
+    openinv::ParameterManager::instance().forEach([](openinv::ParameterBase& param) {
         Serial.println(param.getName());
     });
 }
 
 void loop() {
-    ParameterManager::instance().checkTimeouts(millis());
+    openinv::ParameterManager::instance().checkTimeouts(millis());
     delay(1000);
 }
 
