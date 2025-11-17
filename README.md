@@ -117,7 +117,6 @@ Acts as the **central registry** for all parameters — defined at compile time 
 | `registerParameter(ParameterBase* p)` | Add new parameter to internal list (runtime use) |
 | `getByID(uint16_t id)` | Retrieve parameter by unique ID |
 | `getByName(const char* name)` | Retrieve parameter by name |
-| `deserializeAll(const Reader&)` | Apply a functor/reader to each registered parameter |
 | `forEach(callback)` | Iterate over all registered parameters |
 | `saveAll()` / `loadAll()` | Forward to persistence layer (optional) |
 
