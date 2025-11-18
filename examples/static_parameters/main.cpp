@@ -8,7 +8,7 @@ static const char* ModeNames[] = {"OFF", "IDLE", "RUN", "ERROR"};
 // Parameters defined with the single-line macro keep metadata in Flash
 PARAM(float, engineTemp, 1, "EngineTemp", "°C", "Engine", -40.0f, 125.0f, 0.0f, 1000);
 PARAM(int, rpm, 2, "RPM", "rpm", "Engine", 0, 10000, 0, 1000);
-PARAM(bool, systemActive, 3, "SystemActive", "", "System", false, true, false, 0);
+PARAM_BOOL(systemActive, 3, "SystemActive", "", "System", false, 0);
 PARAM_EXT(Mode, systemMode, 4, "Mode", "", "System", Mode::OFF, Mode::ERROR, Mode::OFF, 0, ModeNames, true);
 
 void setup() {
