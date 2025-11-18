@@ -4,6 +4,13 @@
 #include <stddef.h>
 #include <type_traits>
 
+#if defined(ARDUINO)
+#include <Arduino.h>
+#else
+// Fallback declaration so non-Arduino builds can provide a millis() implementation
+extern uint32_t millis();
+#endif
+
 // Provide Arduino-style byte alias when not available
 #ifndef byte
 using byte = uint8_t;
@@ -77,7 +84,7 @@ public:
     virtual ParameterType getType() const = 0;
     virtual size_t getSize() const = 0;
     virtual const void* getRawBytes() const = 0;
-    virtual ParamFlag getFlags() const = 0;
+    virtual ParamFlag getFlags() = 0;
     virtual bool isValid() const = 0;
     virtual const char* getUnit() const = 0;
     virtual const char* getCategory() const = 0;
@@ -199,7 +206,10 @@ public:
     ParameterType getType() const override { return resolveType<T>(); }
     size_t getSize() const override { return sizeof(T); }
     const void* getRawBytes() const override { return static_cast<const void*>(&value_); }
-    ParamFlag getFlags() const override { return flags_; }
+    ParamFlag getFlags() override {
+        checkTimeout(static_cast<uint32_t>(millis()));
+        return flags_;
+    }
     bool isValid() const override { return (flags_ & (ParamFlag::Error | ParamFlag::Timeout)) == ParamFlag::None; }
     const char* getUnit() const override { return desc_.unit; }
     const char* getCategory() const override { return desc_.category; }

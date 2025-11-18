@@ -92,7 +92,7 @@ Represents a single configuration or runtime variable.
 | `getSize()` | Returns data size |
 | `getMin()` / `getMax()` | Returns min/max |
 | `getRawBytes()` | Returns pointer to raw data |
-| `getFlags()` | Returns current flags |
+| `getFlags()` | Returns current flags after evaluating timeout budget using `millis()` |
 | `isValid()` | Returns validity state |
 
 ---
