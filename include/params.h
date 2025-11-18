@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <type_traits>
+#include <string.h>
 
 #if defined(ARDUINO)
 #include <Arduino.h>
@@ -84,6 +85,7 @@ public:
     virtual ParameterType getType() const = 0;
     virtual size_t getSize() const = 0;
     virtual const void* getRawBytes() const = 0;
+    virtual bool setRawBytes(const void* data, size_t len) = 0;
     virtual ParamFlag getFlags() = 0;
     virtual bool isValid() const = 0;
     virtual const char* getUnit() const = 0;
@@ -198,6 +200,18 @@ public:
     ParameterType getType() const override { return resolveType<T>(); }
     size_t getSize() const override { return sizeof(T); }
     const void* getRawBytes() const override { return static_cast<const void*>(&value_); }
+    bool setRawBytes(const void* data, size_t len) override {
+        if (data == nullptr || len != sizeof(T)) {
+            return false;
+        }
+        if constexpr (resolveType<T>() == ParameterType::String) {
+            return false;
+        } else {
+            T candidate;
+            memcpy(&candidate, data, sizeof(T));
+            return setValue(candidate);
+        }
+    }
     ParamFlag getFlags() override {
         checkTimeout(static_cast<uint32_t>(millis()));
         return flags_;
