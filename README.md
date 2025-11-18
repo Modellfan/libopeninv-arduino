@@ -147,11 +147,8 @@ static const ParamDesc<int> rpmDesc {
 };
 static Parameter<int> rpm { rpmDesc };
 
-// Boolean parameter
-static const ParamDesc<bool> systemActiveDesc {
-    3, "SystemActive", "", "System", false, true, false, 0
-};
-static Parameter<bool> systemActive { systemActiveDesc };
+// Boolean parameter (no min/max needed)
+PARAM_BOOL(systemActive, 3, "SystemActive", "", "System", false, 0);
 
 // Enum parameter
 enum class Mode { OFF, IDLE, RUN, ERROR };
@@ -169,6 +166,8 @@ static Parameter<const char*> mqttServer { mqttServerDesc };
 
 } // namespace params
 ```
+
+Boolean parameters skip range validation and can be declared with the `PARAM_BOOL` macro so you do not need to provide min/max values.
 
 # 📘 Parameter Usage Examples
 

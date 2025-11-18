@@ -247,6 +247,14 @@ struct RangeValidator {
     }
 };
 
+// Booleans do not need range validation
+template <>
+struct RangeValidator<bool, false> {
+    static bool check(const bool&, const ParamDesc<bool>&) {
+        return true;
+    }
+};
+
 template <typename T>
 struct RangeValidator<T, true> {
     static bool check(const T&, const ParamDesc<T>&) {
@@ -278,6 +286,10 @@ constexpr bool checkUnique(const uint16_t (&values)[N]) {
 #define PARAM_EXT(type, varname, id, name, unit, category, minv, maxv, def, timeoutMs, enumNames, persistent) \
     static const ::openinv::ParamDesc<type> desc_##varname { id, name, unit, category, minv, maxv, def, timeoutMs, enumNames, persistent }; \
     namespace params { static ::openinv::Parameter<type> varname { desc_##varname }; }
+
+// Convenience macro for booleans where range checks are unnecessary
+#define PARAM_BOOL(varname, id, name, unit, category, def, timeoutMs) \
+    PARAM_EXT(bool, varname, id, name, unit, category, false, true, def, timeoutMs, nullptr, false)
 
 // Default macro keeps optional enum names and persistence off
 #define PARAM(type, varname, id, name, unit, category, minv, maxv, def, timeoutMs) \

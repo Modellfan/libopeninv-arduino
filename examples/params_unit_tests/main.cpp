@@ -13,7 +13,7 @@ static const char* SystemModeNames[] = {"Off", "Idle", "Run"};
 // Parameter definitions used by the tests
 PARAM(float, engineTemp, 1, "EngineTemp", "°C", "Engine", -40.0f, 125.0f, 0.0f, 5000);
 PARAM(int, rpm, 2, "RPM", "rpm", "Engine", 0, 8000, 0, 1000);
-PARAM(bool, systemReady, 3, "SystemReady", "", "System", false, true, false, 0);
+PARAM_BOOL(systemReady, 3, "SystemReady", "", "System", false, 0);
 PARAM_EXT(SystemMode, systemMode, 4, "SystemMode", "", "System", SystemMode::Off, SystemMode::Run, SystemMode::Off, 0, SystemModeNames, true);
 PARAM_EXT(const char*, label, 5, "Label", "", "Debug", "", "", "idle", 0, nullptr, false);
 
