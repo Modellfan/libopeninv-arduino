@@ -14,6 +14,38 @@ This document explains how `ParameterPersistence` stores Arduino parameters in E
 * Each slot size is `EEPROM.length() / slotCount`. The available payload capacity is `slotSize - sizeof(RecordHeader)`; saves fail if the payload would exceed this space or `uint16_t` limits.
 * Saves also fail when total capacity is smaller than `sizeof(uint16_t)` (the count field), ensuring the payload always has room for the entry list.
 
+### EEPROM fragmentation schematic
+
+The EEPROM is fragmented into equally sized slots laid out back-to-back. The sequence number stored in each slot turns this layout into a ring buffer that rotates as new saves occur.
+
+```
+<EEPROM address 0>
+┌──────────────┬────────────────────────────────────────┬──────────────┬────────────────────────────────────────┬─────┐
+│   Slot 0      │              Slot 1                    │    Slot 2    │              Slot 3                    │ ... │
+│ (slotSize B)  │             (slotSize B)               │ (slotSize B) │             (slotSize B)               │     │
+└──────────────┴────────────────────────────────────────┴──────────────┴────────────────────────────────────────┴─────┘
+```
+
+Within a slot, the layout is:
+
+```
+Offset 0                  sizeof(RecordHeader)                slotSize
+│                         │                                   │
+┌─────────────────────────┬───────────────────────────────────┬────────────────────────────────────────────┐
+│       RecordHeader      │   uint16_t entry_count            │    Parameter entries and raw bytes         │
+│ (magic, version,        │ (at least 2 bytes; aborted saves │ (repeats entry header + value for each     │
+│  payload_size, sequence,│ avoid overrunning payload_size)   │  persisted parameter; total size bounded   │
+│  crc)                   │                                   │  by payload_size)                          │
+└─────────────────────────┴───────────────────────────────────┴────────────────────────────────────────────┘
+```
+
+#### Example: 1024-byte EEPROM, four slots
+
+* `slotCount = 4` ⇒ `slotSize = 256` bytes.
+* Address ranges: Slot 0 = `0–255`, Slot 1 = `256–511`, Slot 2 = `512–767`, Slot 3 = `768–1023`.
+* With `sizeof(RecordHeader) = 16`, the maximum payload (entry count + entries) per slot is `256 - 16 = 240` bytes.
+* Saving data advances through slots in sequence order: first valid save lands in Slot 0 (sequence = 1), next in Slot 1 (sequence = 2), and so on; Slot 0 becomes the newest again once Slot 3 has been used.
+
 ## Record header
 
 | Field | Type | Meaning |
