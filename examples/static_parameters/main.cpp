@@ -9,7 +9,8 @@ static const char* ModeNames[] = {"OFF", "IDLE", "RUN", "ERROR"};
 PARAM(float, engineTemp, 1, "EngineTemp", "°C", "Engine", -40.0f, 125.0f, 0.0f, 1000);
 PARAM(int, rpm, 2, "RPM", "rpm", "Engine", 0, 10000, 0, 1000);
 PARAM_BOOL(systemActive, 3, "SystemActive", "", "System", false, 0);
-PARAM_EXT(Mode, systemMode, 4, "Mode", "", "System", Mode::OFF, Mode::ERROR, Mode::OFF, 0, ModeNames, true);
+static const oi::ParamDesc<Mode> desc_systemMode {4, "Mode", "", "System", Mode::OFF, Mode::ERROR, Mode::OFF, 0, ModeNames, true};
+namespace params { static oi::Parameter<Mode> systemMode { desc_systemMode }; }
 
 void setup() {
     Serial.begin(115200);
@@ -20,13 +21,13 @@ void setup() {
     params::systemMode = Mode::RUN;
 
     Serial.println(F("Registered parameters:"));
-    openinv::ParameterManager::instance().forEach([](openinv::ParameterBase& param) {
+    oi::ParameterManager::instance().forEach([](oi::ParameterBase& param) {
         Serial.println(param.getName());
     });
 }
 
 void loop() {
-    openinv::ParameterManager::instance().checkTimeouts(millis());
+    oi::ParameterManager::instance().checkTimeouts(millis());
     delay(1000);
 }
 

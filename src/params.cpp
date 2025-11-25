@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-namespace openinv {
+namespace oi {
 
 ParameterManager& ParameterManager::instance() {
     static ParameterManager instance;
@@ -62,5 +62,5 @@ void ParameterManager::checkTimeouts(uint32_t nowMs) {
     }
 }
 
-} // namespace openinv
+} // namespace oi
 

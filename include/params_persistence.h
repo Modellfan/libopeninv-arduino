@@ -6,7 +6,7 @@
 
 #include "params.h"
 
-namespace openinv {
+namespace oi {
 
 class ParameterPersistence {
 public:
@@ -120,11 +120,11 @@ private:
     }
 
     bool canPersist(const ParameterBase& param) const {
-        const ParameterType type = param.getType();
         if (!param.isPersistent()) {
             return false;
         }
-        if (type == ParameterType::Unknown || type == ParameterType::String) {
+        const ParameterType type = param.getType();
+        if (type == ParameterType::Unknown) {
             return false;
         }
         return param.getSize() <= kMaxValueSize;
@@ -361,5 +361,5 @@ private:
     }
 };
 
-} // namespace openinv
+} // namespace oi
 
