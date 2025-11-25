@@ -8,7 +8,7 @@
 
 #include "params.h"
 
-namespace openinv {
+namespace oi {
 
 namespace detail {
 uint8_t computeCRC8(const uint8_t* data, size_t len, uint8_t init, uint8_t polynomial);
@@ -252,5 +252,5 @@ private:
     uint32_t rxCounter_ = 0;
 };
 
-} // namespace openinv
+} // namespace oi
 

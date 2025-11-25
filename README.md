@@ -3,7 +3,8 @@
 ## 🧩 Overview
 This project defines a **lightweight and extensible parameter management system** for embedded devices such as Arduino and STM32. It provides a unified interface for **compile-time parameter handling**, allowing efficient data management, serialization, and communication between modules.
 
-For the deeper rationale behind the architecture choices, see the [design decision document](Parameters Architecture.md).
+For the deeper rationale behind the architecture choices, see the [design decision document](Parameters Architecture.md). All
+public types live under the `oi` namespace.
 
 The architecture is designed to be:
 - 💡 **Type-safe**
@@ -32,7 +33,7 @@ The architecture is designed to be:
 - 🧠 **Compile-time definition** of all embedded parameters (values, names, limits)
 - 🔒 **Deterministic, static embedded firmware** — no runtime parameter mutation inside the microcontroller
 - 🧩 **Type safety** across supported types:
-  - `float`, `int`, `byte`, `bool`, `enum`, `string`
+  - `float`, `int`, `byte`, `bool`, `enum`
 - 🔍 **Self-descriptive parameters** — each knows its name, type, and metadata at runtime
 - 🚫 **No redundant definitions** (no duplicated names or IDs)
 - 🧮 **Simple, unified access syntax**
@@ -132,6 +133,8 @@ All compile-time parameters are defined in `params_proj.h`. Each parameter uses 
 // params_proj.h
 
 #include "params.h"
+
+using namespace oi;
 
 namespace params {
 

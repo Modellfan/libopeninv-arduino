@@ -1,10 +1,10 @@
 #include <Arduino.h>
 #include "params.h"
 
-using openinv::ParamFlag;
-using openinv::ParameterBase;
-using openinv::ParameterManager;
-using openinv::ParameterType;
+using oi::ParamFlag;
+using oi::ParameterBase;
+using oi::ParameterManager;
+using oi::ParameterType;
 
 // Example enum parameter
 enum class SystemMode { Off, Idle, Run };
@@ -14,8 +14,8 @@ static const char* SystemModeNames[] = {"Off", "Idle", "Run"};
 PARAM(float, engineTemp, 1, "EngineTemp", "°C", "Engine", -40.0f, 125.0f, 0.0f, 5000);
 PARAM(int, rpm, 2, "RPM", "rpm", "Engine", 0, 8000, 0, 1000);
 PARAM_BOOL(systemReady, 3, "SystemReady", "", "System", false, 0);
-PARAM_EXT(SystemMode, systemMode, 4, "SystemMode", "", "System", SystemMode::Off, SystemMode::Run, SystemMode::Off, 0, SystemModeNames, true);
-PARAM_EXT(const char*, label, 5, "Label", "", "Debug", "", "", "idle", 0, nullptr, false);
+static const oi::ParamDesc<SystemMode> desc_systemMode {4, "SystemMode", "", "System", SystemMode::Off, SystemMode::Run, SystemMode::Off, 0, SystemModeNames, true};
+namespace params { static oi::Parameter<SystemMode> systemMode { desc_systemMode }; }
 
 struct TestRunner {
     size_t passed = 0;
@@ -65,7 +65,7 @@ bool hasFlag(ParameterBase& param, ParamFlag flag) {
 }
 
 void testRegistration() {
-    runner.assertTrue(ParameterManager::instance().size() == 5, "Registry contains all parameters");
+    runner.assertTrue(ParameterManager::instance().size() == 4, "Registry contains all parameters");
     runner.assertTrue(ParameterManager::instance().getByID(1) == &params::engineTemp, "Lookup by ID works", "EngineTemp");
     runner.assertTrue(ParameterManager::instance().getByName("RPM") == &params::rpm, "Lookup by name works", "RPM");
 }
@@ -75,7 +75,6 @@ void testTypesAndDefaults() {
     runner.assertTrue(params::rpm.getType() == ParameterType::Int, "Type resolver", "int -> Int");
     runner.assertTrue(params::systemReady.getType() == ParameterType::Bool, "Type resolver", "bool -> Bool");
     runner.assertTrue(params::systemMode.getType() == ParameterType::Enum, "Type resolver", "enum -> Enum");
-    runner.assertTrue(params::label.getType() == ParameterType::String, "Type resolver", "const char* -> String");
 
     runner.assertTrue(params::engineTemp.getValue() == params::engineTemp.getDefault(), "Defaults initialized", "engineTemp");
     runner.assertTrue(params::systemMode.getValue() == SystemMode::Off, "Defaults initialized", "systemMode");

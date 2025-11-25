@@ -17,7 +17,7 @@ extern uint32_t millis();
 using byte = uint8_t;
 #endif
 
-namespace openinv {
+namespace oi {
 
 // Supported parameter types for runtime introspection
 enum class ParameterType : uint8_t {
@@ -27,7 +27,6 @@ enum class ParameterType : uint8_t {
     Byte,
     Bool,
     Enum,
-    String,
 };
 
 // Status/health flags for parameters
@@ -114,9 +113,6 @@ template <> struct TypeResolver<float, void> { static constexpr ParameterType va
 template <> struct TypeResolver<int, void> { static constexpr ParameterType value = ParameterType::Int; };
 template <> struct TypeResolver<byte, void> { static constexpr ParameterType value = ParameterType::Byte; };
 template <> struct TypeResolver<bool, void> { static constexpr ParameterType value = ParameterType::Bool; };
-template <> struct TypeResolver<const char*, void> { static constexpr ParameterType value = ParameterType::String; };
-template <> struct TypeResolver<char*, void> { static constexpr ParameterType value = ParameterType::String; };
-
 template <typename T>
 constexpr ParameterType resolveType() {
     return TypeResolver<T>::value;
@@ -156,7 +152,7 @@ private:
 };
 
 // Parameter implementation
-template <typename T, bool IsString>
+template <typename T>
 struct RangeValidator;
 
 template <typename T>
@@ -204,19 +200,22 @@ public:
         if (data == nullptr || len != sizeof(T)) {
             return false;
         }
-        if constexpr (resolveType<T>() == ParameterType::String) {
-            return false;
-        } else {
-            T candidate;
-            memcpy(&candidate, data, sizeof(T));
-            return setValue(candidate);
-        }
+        T candidate;
+        memcpy(&candidate, data, sizeof(T));
+        return setValue(candidate);
     }
     ParamFlag getFlags() override {
         checkTimeout(static_cast<uint32_t>(millis()));
         return flags_;
     }
-    bool isValid() const override { return (flags_ & (ParamFlag::Error | ParamFlag::Timeout)) == ParamFlag::None; }
+    bool isValid() const override {
+        const ParamFlag disallowed = ParamFlag::Error | ParamFlag::Timeout;
+        const bool noIssues = (flags_ & disallowed) == ParamFlag::None;
+        if (desc_.persistent) {
+            return noIssues;
+        }
+        return noIssues && (flags_ & ParamFlag::Initial) == ParamFlag::None;
+    }
     const char* getUnit() const override { return desc_.unit; }
     const char* getCategory() const override { return desc_.category; }
     uint32_t getTimeoutBudget() const override { return desc_.timeoutBudgetMs; }
@@ -245,7 +244,7 @@ protected:
 
 private:
     bool validateRange(const T& candidate) const {
-        return RangeValidator<T, resolveType<T>() == ParameterType::String>::check(candidate, desc_);
+        return RangeValidator<T>::check(candidate, desc_);
     }
 
     const ParamDesc<T>& desc_;
@@ -254,7 +253,7 @@ private:
     uint32_t lastUpdateTimestamp_ = 0;
 };
 
-template <typename T, bool IsString>
+template <typename T>
 struct RangeValidator {
     static bool check(const T& candidate, const ParamDesc<T>& desc) {
         return candidate >= desc.minVal && candidate <= desc.maxVal;
@@ -263,21 +262,11 @@ struct RangeValidator {
 
 // Booleans do not need range validation
 template <>
-struct RangeValidator<bool, false> {
+struct RangeValidator<bool> {
     static bool check(const bool&, const ParamDesc<bool>&) {
         return true;
     }
 };
-
-template <typename T>
-struct RangeValidator<T, true> {
-    static bool check(const T&, const ParamDesc<T>&) {
-        return true;
-    }
-};
-
-// Range validation helper for enums when min/max are provided
-// (already handled by default comparison operators)
 
 // Utility to check uniqueness of IDs at compile time
 constexpr bool checkUnique(const uint16_t* values, size_t count) {
@@ -296,18 +285,15 @@ constexpr bool checkUnique(const uint16_t (&values)[N]) {
     return checkUnique(values, N);
 }
 
-// Helper macro to define parameters in a single line with metadata in Flash
-#define PARAM_EXT(type, varname, id, name, unit, category, minv, maxv, def, timeoutMs, enumNames, persistent) \
-    static const ::openinv::ParamDesc<type> desc_##varname { id, name, unit, category, minv, maxv, def, timeoutMs, enumNames, persistent }; \
-    namespace params { static ::openinv::Parameter<type> varname { desc_##varname }; }
-
 // Convenience macro for booleans where range checks are unnecessary
 #define PARAM_BOOL(varname, id, name, unit, category, def, timeoutMs) \
-    PARAM_EXT(bool, varname, id, name, unit, category, false, true, def, timeoutMs, nullptr, false)
+    static const ::oi::ParamDesc<bool> desc_##varname { id, name, unit, category, false, true, def, timeoutMs, nullptr, false }; \
+    namespace params { static ::oi::Parameter<bool> varname { desc_##varname }; }
 
 // Default macro keeps optional enum names and persistence off
 #define PARAM(type, varname, id, name, unit, category, minv, maxv, def, timeoutMs) \
-    PARAM_EXT(type, varname, id, name, unit, category, minv, maxv, def, timeoutMs, nullptr, false)
+    static const ::oi::ParamDesc<type> desc_##varname { id, name, unit, category, minv, maxv, def, timeoutMs, nullptr, false }; \
+    namespace params { static ::oi::Parameter<type> varname { desc_##varname }; }
 
-} // namespace openinv
+} // namespace oi
 

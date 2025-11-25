@@ -24,13 +24,13 @@ static uint8_t customCRC8(const uint8_t* data, size_t len, uint8_t init, uint8_t
 }
 
 // Define the PDU with compile-time descriptors
-static auto pduEngine = openinv::PDU(
+static auto pduEngine = oi::PDU(
     0x123,
-    openinv::field(openinv::params::mode, 0, 8),
-    openinv::field(openinv::params::rpm, 8, 16),
-    openinv::field(openinv::params::tempC, 24, 16, {0.1f, 0.0f}),
-    openinv::Counter{56, 4, 16},
-    openinv::crc8(7, 0xFF, 0x1D, 8, &customCRC8));
+    oi::field(oi::params::mode, 0, 8),
+    oi::field(oi::params::rpm, 8, 16),
+    oi::field(oi::params::tempC, 24, 16, {0.1f, 0.0f}),
+    oi::Counter{56, 4, 16},
+    oi::crc8(7, 0xFF, 0x1D, 8, &customCRC8));
 
 static void printBuffer(const uint8_t* buf, size_t len) {
     for (size_t i = 0; i < len; ++i) {
@@ -48,9 +48,9 @@ void setup() {
     }
 
     // Populate signal values
-    openinv::params::mode.setValue(3);
-    openinv::params::rpm.setValue(1500);
-    openinv::params::tempC.setValue(85.0f);
+    oi::params::mode.setValue(3);
+    oi::params::rpm.setValue(1500);
+    oi::params::tempC.setValue(85.0f);
 
     uint8_t txPayload[8] = {};
     pduEngine.pack(txPayload);
@@ -67,11 +67,11 @@ void setup() {
     Serial.println(crcOk ? F("yes") : F("no"));
 
     Serial.print(F("Decoded mode: "));
-    Serial.println(openinv::params::mode.getValue());
+    Serial.println(oi::params::mode.getValue());
     Serial.print(F("Decoded rpm: "));
-    Serial.println(openinv::params::rpm.getValue());
+    Serial.println(oi::params::rpm.getValue());
     Serial.print(F("Decoded tempC: "));
-    Serial.println(openinv::params::tempC.getValue(), 1);
+    Serial.println(oi::params::tempC.getValue(), 1);
     Serial.print(F("Counter value: "));
     Serial.println(pduEngine.counter());
 }
