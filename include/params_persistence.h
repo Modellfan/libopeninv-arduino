@@ -8,6 +8,12 @@
 
 namespace oi {
 
+// ParameterPersistence serializes registered parameters into EEPROM using a
+// fixed-size ring buffer of slots. Each slot contains a RecordHeader followed
+// by a compact list of entries describing the parameters that opted into
+// persistence. The class intentionally keeps logic header-only so it can be
+// used in small Arduino builds without requiring an additional translation
+// unit.
 class ParameterPersistence {
 public:
     static constexpr uint8_t kDefaultSlotCount = 4;
@@ -21,6 +27,8 @@ public:
           lastSlot_(0U),
           slotSize_(0U) {}
 
+    // Initializes slot bookkeeping and discovers the latest valid slot. Safe
+    // to call multiple times; subsequent invocations are no-ops.
     void begin() {
         if (initialized_) {
             return;
@@ -31,6 +39,9 @@ public:
         scanSlots();
     }
 
+    // Serializes all eligible parameters into the next slot in the ring.
+    // Returns false if there is insufficient capacity or if no valid payload
+    // can be written (for example when EEPROM is smaller than a header).
     bool save() {
         if (!initialized_) {
             begin();
@@ -75,6 +86,8 @@ public:
         return true;
     }
 
+    // Loads the most recent valid slot and applies parameter values. Returns
+    // false when no valid slot was found or when initialization fails.
     bool load() {
         if (!initialized_) {
             begin();
@@ -88,6 +101,9 @@ public:
     }
 
 private:
+    // RecordHeader prefixes each slot and describes the payload that follows.
+    // The CRC covers the header (with crc cleared), entry count, and every
+    // persisted parameter entry.
     struct RecordHeader {
         uint32_t magic;
         uint16_t version;
@@ -96,6 +112,8 @@ private:
         uint32_t crc;
     };
 
+    // ParameterEntryHeader precedes each parameter blob in the payload. The
+    // entry keeps only the metadata needed to reconstruct the value on load.
     struct ParameterEntryHeader {
         uint16_t id;
         uint8_t type;
@@ -112,6 +130,7 @@ private:
     size_t lastSlot_;
     size_t slotSize_;
 
+    // Maximum payload bytes that fit after the RecordHeader in a single slot.
     size_t payloadCapacity() const {
         if (slotSize_ <= sizeof(RecordHeader)) {
             return 0U;
@@ -119,6 +138,10 @@ private:
         return slotSize_ - sizeof(RecordHeader);
     }
 
+    // Filters out parameters that cannot be serialized safely. Strings and
+    // unknown types are skipped because their sizes are variable or
+    // unsupported, and large buffers are rejected to keep slot payloads
+    // bounded.
     bool canPersist(const ParameterBase& param) const {
         if (!param.isPersistent()) {
             return false;
