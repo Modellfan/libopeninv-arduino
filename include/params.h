@@ -61,6 +61,30 @@ class ParameterBase;
 // and allow aggregate initialization.
 template <typename T>
 struct ParamDesc {
+    constexpr ParamDesc() = default;
+
+    constexpr ParamDesc(
+        uint16_t id,
+        const char* name,
+        const char* unit,
+        const char* category,
+        T minVal,
+        T maxVal,
+        T defaultVal,
+        uint32_t timeoutBudgetMs,
+        const char** enumNames = nullptr,
+        bool persistent = false)
+        : id(id),
+          name(name),
+          unit(unit),
+          category(category),
+          minVal(minVal),
+          maxVal(maxVal),
+          defaultVal(defaultVal),
+          timeoutBudgetMs(timeoutBudgetMs),
+          enumNames(enumNames),
+          persistent(persistent) {}
+
     uint16_t id;
     const char* name;
     const char* unit;
@@ -269,15 +293,20 @@ struct RangeValidator<bool> {
 };
 
 // Utility to check uniqueness of IDs at compile time
+constexpr bool hasDuplicate(const uint16_t* values, size_t count, size_t startIndex, uint16_t target) {
+    return (startIndex >= count)
+        ? false
+        : (values[startIndex] == target ? true : hasDuplicate(values, count, startIndex + 1, target));
+}
+
+constexpr bool checkUniqueRecursive(const uint16_t* values, size_t count, size_t index = 0) {
+    return (index >= count)
+        ? true
+        : (!hasDuplicate(values, count, index + 1, values[index]) && checkUniqueRecursive(values, count, index + 1));
+}
+
 constexpr bool checkUnique(const uint16_t* values, size_t count) {
-    for (size_t i = 0; i < count; ++i) {
-        for (size_t j = i + 1; j < count; ++j) {
-            if (values[i] == values[j]) {
-                return false;
-            }
-        }
-    }
-    return true;
+    return checkUniqueRecursive(values, count, 0);
 }
 
 template <size_t N>
