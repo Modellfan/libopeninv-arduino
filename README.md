@@ -34,6 +34,8 @@ The architecture is designed to be:
 - 🔒 **Deterministic, static embedded firmware** — no runtime parameter mutation inside the microcontroller
 - 🧩 **Type safety** across supported types:
   - `float`, `int`, `byte`, `bool`, `enum`
+- 🚫 **Dynamic strings are intentionally unsupported** to keep payload sizes predictable; prefer fixed-size C strings stored in
+  dedicated buffers when needed.
 - 🔍 **Self-descriptive parameters** — each knows its name, type, and metadata at runtime
 - 🚫 **No redundant definitions** (no duplicated names or IDs)
 - 🧮 **Simple, unified access syntax**
@@ -239,7 +241,7 @@ You can define parameters across multiple headers:
 namespace params { PARAM(float, engineTemp, ...); }
 
 // params_network.h
-namespace params { PARAM(string, mqttServer, ...); }
+namespace params { PARAM(int, mqttPort, ...); }
 ```
 
 Everything still works because:

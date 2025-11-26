@@ -61,16 +61,23 @@ Offset 0                  sizeof(RecordHeader)                slotSize
 * Immediately after the header comes a `uint16_t` **entry count** followed by `count` parameter entries.
 * Each entry starts with a `ParameterEntryHeader`:
   * `id` (`uint16_t`): Parameter identifier.
-  * `type` (`uint8_t`): Encoded `ParameterType` value.
-  * `size` (`uint16_t`): Number of data bytes that follow.
-* The entry header is followed by the raw bytes of the parameter value. Variable-length strings are excluded because the persistence layer only supports bounded values.
+  * `type` (`uint8_t`): Encoded `ParameterType` value (persisted to detect schema drift if firmware definitions change).
+  * `size` (`uint16_t`): Number of data bytes that follow (persisted so unknown IDs can still be skipped safely).
+* The entry header is followed by the raw bytes of the parameter value. Variable-length strings are excluded because the persistence layer only supports bounded values, and dynamic `String`/`std::string` usage is intentionally unsupported.
+
+Even though the parameter registry can resolve a type and size by ID, the persisted metadata keeps the record self-describing. That way:
+
+* Loads can reject mismatched parameter definitions after a firmware update instead of silently applying incompatible bytes.
+* Unknown IDs remain skippable during validation because the stored size makes it possible to advance the cursor without consulting the registry.
+
+The entry count lives immediately after the `RecordHeader` instead of inside it so the header remains a fixed-size block; both the header and the count are still covered by the CRC and versioning.
 
 ## Eligibility rules
 
 Parameters are persisted only when all conditions are true:
 
 1. The parameter marks itself as persistent (`isPersistent()` returns true).
-2. The type is neither `Unknown` nor `String` (variable-sized or unsupported).
+2. The type is not `Unknown` (dynamic string-like types are skipped entirely because their size is not bounded).
 3. The value size is less than or equal to `kMaxValueSize` (16 bytes) to keep payloads compact and predictable.
 
 Parameters that fail any rule are skipped during save and ignored when loading, even if present in EEPROM.
