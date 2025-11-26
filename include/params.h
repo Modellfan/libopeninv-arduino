@@ -292,36 +292,31 @@ struct RangeValidator<bool> {
     }
 };
 
-// Utility to check uniqueness of IDs at compile time
-constexpr bool hasDuplicate(const uint16_t* values, size_t count, size_t startIndex, uint16_t target) {
-    return (startIndex >= count)
-        ? false
-        : (values[startIndex] == target ? true : hasDuplicate(values, count, startIndex + 1, target));
-}
-
-constexpr bool checkUniqueRecursive(const uint16_t* values, size_t count, size_t index = 0) {
-    return (index >= count)
-        ? true
-        : (!hasDuplicate(values, count, index + 1, values[index]) && checkUniqueRecursive(values, count, index + 1));
-}
-
-constexpr bool checkUnique(const uint16_t* values, size_t count) {
-    return checkUniqueRecursive(values, count, 0);
+inline bool checkUnique(const uint16_t* values, size_t count) {
+    for (size_t i = 0; i < count; ++i) {
+        const uint16_t current = values[i];
+        for (size_t j = i + 1; j < count; ++j) {
+            if (values[j] == current) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 template <size_t N>
-constexpr bool checkUnique(const uint16_t (&values)[N]) {
+inline bool checkUnique(const uint16_t (&values)[N]) {
     return checkUnique(values, N);
 }
 
 // Convenience macro for booleans where range checks are unnecessary
 #define PARAM_BOOL(varname, id, name, unit, category, def, timeoutMs) \
-    static const ::oi::ParamDesc<bool> desc_##varname { id, name, unit, category, false, true, def, timeoutMs, nullptr, false }; \
+    static const ::oi::ParamDesc<bool> desc_##varname(id, name, unit, category, false, true, def, timeoutMs, nullptr, false); \
     namespace params { static ::oi::Parameter<bool> varname { desc_##varname }; }
 
 // Default macro keeps optional enum names and persistence off
 #define PARAM(type, varname, id, name, unit, category, minv, maxv, def, timeoutMs) \
-    static const ::oi::ParamDesc<type> desc_##varname { id, name, unit, category, minv, maxv, def, timeoutMs, nullptr, false }; \
+    static const ::oi::ParamDesc<type> desc_##varname(id, name, unit, category, minv, maxv, def, timeoutMs, nullptr, false); \
     namespace params { static ::oi::Parameter<type> varname { desc_##varname }; }
 
 } // namespace oi
