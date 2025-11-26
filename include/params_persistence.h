@@ -112,8 +112,10 @@ private:
         uint32_t crc;
     };
 
-    // ParameterEntryHeader precedes each parameter blob in the payload. The
-    // entry keeps only the metadata needed to reconstruct the value on load.
+    // ParameterEntryHeader precedes each parameter blob in the payload. Type
+    // and size are persisted so records stay self-describing: loaders can skip
+    // unknown IDs safely and detect schema drift even if firmware definitions
+    // change between saves.
     struct ParameterEntryHeader {
         uint16_t id;
         uint8_t type;
