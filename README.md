@@ -1,5 +1,7 @@
 # 📘 Parameter System Architecture for Embedded Devices (Arduino / STM32 Compatible)
 
+This is my own much more advanced but not code compatible with libopeninv approach
+
 ## 🧩 Overview
 This project defines a **lightweight and extensible parameter management system** for embedded devices such as Arduino and STM32. It provides a unified interface for **compile-time parameter handling**, allowing efficient data management, serialization, and communication between modules.
 
