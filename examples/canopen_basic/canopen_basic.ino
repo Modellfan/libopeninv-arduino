@@ -27,6 +27,28 @@ CanHardwareTeensy41 canHardware(CanHardwareTeensy41::Can1);
 CanMap canMap(&canHardware);
 CanSdo canSdo(&canHardware, &canMap);
 
+class CanDispatch : public CanCallback
+{
+public:
+    CanDispatch(CanMap* map, CanSdo* sdo) : canMap(map), canSdo(sdo) {}
+    void HandleClear() override
+    {
+        if (canMap) canMap->HandleClear();
+        if (canSdo) canSdo->HandleClear();
+    }
+    void HandleRx(uint32_t canId, uint32_t data[2], uint8_t dlc) override
+    {
+        if (canMap) canMap->HandleRx(canId, data, dlc);
+        if (canSdo) canSdo->HandleRx(canId, data, dlc);
+    }
+
+private:
+    CanMap* canMap;
+    CanSdo* canSdo;
+};
+
+CanDispatch canDispatch(&canMap, &canSdo);
+
 // Parameter change callback - called when a parameter is modified via CANOpen
 void Param::Change(Param::PARAM_NUM param)
 {
@@ -81,6 +103,9 @@ void setup()
     }
 
     Serial.println("CAN bus initialized at 500 kbps");
+
+    // Single CAN callback dispatch
+    canHardware.AddCallback(&canDispatch);
 
     // Set up CANOpen node ID
     canSdo.SetNodeId(Param::GetInt(Param::canNodeId));

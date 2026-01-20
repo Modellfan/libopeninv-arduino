@@ -46,8 +46,6 @@ static uint32_t calculate_crc32_block(uint32_t *data, uint32_t length)
 CanMap::CanMap(CanHardware* hw, bool loadFromFlash)
  : canHardware(hw)
 {
-   canHardware->AddCallback(this);
-
    ClearMap(canSendMap);
    ClearMap(canRecvMap);
    if (loadFromFlash) LoadFromFlash();

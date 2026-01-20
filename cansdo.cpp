@@ -57,7 +57,6 @@
    pendingUserSpaceSdo(false), jsonSize(0), printCallback(nullptr), 
    jsonStreamActive(false)
 {
-   canHardware->AddCallback(this);
    HandleClear();
 }
 

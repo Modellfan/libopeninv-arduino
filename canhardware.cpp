@@ -29,27 +29,15 @@ public:
 static NullCallback nullCallback;
 
 CanHardware::CanHardware()
-   : nextUserMessageIndex(0), lastRxTimestamp(0), nextCallbackIndex(0)
+   : nextUserMessageIndex(0), lastRxTimestamp(0), recvCallback(&nullCallback)
 {
-   for (int i = 0; i < MAX_RECV_CALLBACKS; i++)
-   {
-      recvCallback[i] = &nullCallback;
-   }
 }
 
-/** \brief Add interface to be called for user handled CAN messages
- *
- * \param recv CanCallback interface
- */
+/** \brief Set interface to be called for user handled CAN messages */
 bool CanHardware::AddCallback(CanCallback* recv)
 {
-   if (nextCallbackIndex < MAX_RECV_CALLBACKS)
-   {
-      recvCallback[nextCallbackIndex] = recv;
-      nextCallbackIndex++;
-      return true;
-   }
-   return false;
+   recvCallback = recv ? recv : &nullCallback;
+   return recv != nullptr;
 }
 
 /** \brief Add CAN Id to user message list
@@ -86,16 +74,10 @@ void CanHardware::ClearUserMessages()
    nextUserMessageIndex = 0;
    ConfigureFilters();
 
-   for (int i = 0; i < nextCallbackIndex; i++)
-   {
-      recvCallback[i]->HandleClear();
-   }
+   recvCallback->HandleClear();
 }
 
 void CanHardware::HandleRx(uint32_t canId, uint32_t data[2], uint8_t dlc)
 {
-   for (int i = 0; i < nextCallbackIndex; i++)
-   {
-      recvCallback[i]->HandleRx(canId, data, dlc);
-   }
+   recvCallback->HandleRx(canId, data, dlc);
 }
