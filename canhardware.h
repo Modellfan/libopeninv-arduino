@@ -25,6 +25,10 @@
 #define MAX_USER_MESSAGES 30
 #endif
 
+#ifndef MAX_RECV_CALLBACKS
+#define MAX_RECV_CALLBACKS 5
+#endif
+
 class CanCallback
 {
 public:
@@ -75,7 +79,8 @@ class CanHardware
       uint32_t lastRxTimestamp;
 
    private:
-      CanCallback* recvCallback;
+      CanCallback* recvCallback[MAX_RECV_CALLBACKS];
+      int nextCallbackIndex;
 
       virtual void ConfigureFilters() = 0;
 };

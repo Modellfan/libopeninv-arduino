@@ -12,27 +12,20 @@ CanHardwareTeensy41 canHardware(CanHardwareTeensy41::Can1);
 CanMap canMap(&canHardware);
 CanSdo canSdo(&canHardware, &canMap);
 
-class CanDispatch : public CanCallback
+static bool Can1Callback(uint32_t canId, uint32_t data[2], uint8_t dlc)
 {
-public:
-    CanDispatch(CanMap* map, CanSdo* sdo) : canMap(map), canSdo(sdo) {}
-    void HandleClear() override
-    {
-        if (canMap) canMap->HandleClear();
-        if (canSdo) canSdo->HandleClear();
-    }
-    void HandleRx(uint32_t canId, uint32_t data[2], uint8_t dlc) override
-    {
-        if (canMap) canMap->HandleRx(canId, data, dlc);
-        if (canSdo) canSdo->HandleRx(canId, data, dlc);
-    }
+    canMap.HandleRx(canId, data, dlc);
+    canSdo.HandleRx(canId, data, dlc);
+    return true;
+}
 
-private:
-    CanMap* canMap;
-    CanSdo* canSdo;
-};
+static void SetCanFilters()
+{
+    canMap.HandleClear();
+    canSdo.HandleClear();
+}
 
-CanDispatch canDispatch(&canMap, &canSdo);
+static FunctionPointerCallback canCallback(Can1Callback, SetCanFilters);
 
 void Param::Change(Param::PARAM_NUM param)
 {
@@ -75,7 +68,7 @@ void setup()
 
     canSdo.SetNodeId(Param::GetInt(Param::canNodeId));
 
-    canHardware.AddCallback(&canDispatch);
+    canHardware.AddCallback(&canCallback);
 
     canMap.AddRecv(Param::packVoltage, 0x100, 0, 16, 0.1f);
     canMap.AddSend(Param::packCurrent, 0x200, 0, 16, 10.0f);
