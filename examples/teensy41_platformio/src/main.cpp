@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <ACAN_T4.h>
-#include "canhardware_arduino.h"
+#include "canhardware_teensy41.h"
 #include "params.h"
 #include "param_save.h"
 #include "cansdo.h"
@@ -8,7 +8,7 @@
 
 static const uint32_t kCanBitrate = 500000;
 
-CanHardwareArduino canHardware(&ACAN_T4::can1);
+CanHardwareTeensy41 canHardware(CanHardwareTeensy41::Can1);
 CanMap canMap(&canHardware);
 CanSdo canSdo(&canHardware, &canMap);
 

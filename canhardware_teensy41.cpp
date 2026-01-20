@@ -2,14 +2,25 @@
  * Arduino port of libopeninv CanHardware
  * Wraps the existing CANBus class to provide the CanHardware interface
  */
-#include "canhardware_arduino.h"
+#include "canhardware_teensy41.h"
 
-CanHardwareArduino::CanHardwareArduino(ACAN_T4* canBus)
+CanHardwareTeensy41::CanHardwareTeensy41(Bus bus)
+    : CanHardware(), can(ResolveBus(bus))
+{
+}
+
+CanHardwareTeensy41::CanHardwareTeensy41(Bus bus, enum baudrates baudrate)
+    : CanHardware(), can(ResolveBus(bus))
+{
+    SetBaudrate(baudrate);
+}
+
+CanHardwareTeensy41::CanHardwareTeensy41(ACAN_T4* canBus)
     : CanHardware(), can(canBus)
 {
 }
 
-void CanHardwareArduino::SetBaudrate(enum baudrates baudrate)
+void CanHardwareTeensy41::SetBaudrate(enum baudrates baudrate)
 {
     uint32_t baud;
 
@@ -24,24 +35,31 @@ void CanHardwareArduino::SetBaudrate(enum baudrates baudrate)
     }
 
     ACAN_T4_Settings settings(baud);
-    can->begin(settings);
+    if (can != nullptr)
+        can->begin(settings);
 }
 
-void CanHardwareArduino::Send(uint32_t canId, uint32_t data[2], uint8_t len)
+void CanHardwareTeensy41::Send(uint32_t canId, uint32_t data[2], uint8_t len)
 {
+    if (can == nullptr)
+        return;
+
     CANMessage frame;
     convertToCanFrame(canId, data, len, frame);
 
     can->tryToSend(frame);
 }
 
-void CanHardwareArduino::ConfigureFilters()
+void CanHardwareTeensy41::ConfigureFilters()
 {
     // Accept all frames; filtering can be added if needed.
 }
 
-void CanHardwareArduino::Poll()
+void CanHardwareTeensy41::Poll()
 {
+    if (can == nullptr)
+        return;
+
     CANMessage frame;
     while (can->receive(frame))
     {
@@ -56,11 +74,22 @@ void CanHardwareArduino::Poll()
     }
 }
 
-void CanHardwareArduino::convertToCanFrame(uint32_t canId, uint32_t data[2], uint8_t len, CANMessage& frame)
+void CanHardwareTeensy41::convertToCanFrame(uint32_t canId, uint32_t data[2], uint8_t len, CANMessage& frame)
 {
     frame.id = canId;
     frame.ext = (canId > 0x7FF);
     frame.rtr = false;
     frame.len = len;
     memcpy(frame.data, data, len);
+}
+
+ACAN_T4* CanHardwareTeensy41::ResolveBus(Bus bus)
+{
+    switch (bus)
+    {
+        case Can1: return &ACAN_T4::can1;
+        case Can2: return &ACAN_T4::can2;
+        case Can3: return &ACAN_T4::can3;
+        default: return nullptr;
+    }
 }

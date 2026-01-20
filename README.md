@@ -19,7 +19,7 @@ Arduino port of the libopeninv library, providing CANOpen and parameter manageme
 - **cansdo**: CANOpen SDO protocol implementation for parameter access
 - **canmap**: Bidirectional mapping between CAN messages and parameters
 - **canhardware**: Abstract CAN hardware interface
-- **canhardware_arduino**: Arduino wrapper for ACAN_T4 CAN driver on Teensy
+- **canhardware_teensy41**: Teensy 4.1 wrapper for ACAN_T4 CAN driver
 
 ## Usage
 
@@ -42,14 +42,14 @@ Edit `include/param_prj.h` to define your application parameters:
 
 ```cpp
 #include <ACAN_T4.h>
-#include "canhardware_arduino.h"
+#include "canhardware_teensy41.h"
 #include "params.h"
 #include "param_save.h"
 #include "cansdo.h"
 #include "canmap.h"
 
 // Create CAN and libopeninv objects
-CanHardwareArduino canHardware(&ACAN_T4::can1);
+CanHardwareTeensy41 canHardware(CanHardwareTeensy41::Can1);
 CanMap canMap(&canHardware);
 CanSdo canSdo(&canHardware, &canMap);
 

@@ -11,7 +11,7 @@
 
 #include <Arduino.h>
 #include <ACAN_T4.h>
-#include "canhardware_arduino.h"
+#include "canhardware_teensy41.h"
 #include "params.h"
 #include "param_save.h"
 #include "cansdo.h"
@@ -21,7 +21,7 @@ static const uint32_t kCanBitrate = 500000;
 // Teensy 4.1 CAN1 uses pins 22 (TX) and 23 (RX).
 
 // Create libopeninv hardware wrapper
-CanHardwareArduino canHardware(&ACAN_T4::can1);
+CanHardwareTeensy41 canHardware(CanHardwareTeensy41::Can1);
 
 // Create CAN mapping and SDO handlers
 CanMap canMap(&canHardware);
